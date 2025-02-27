@@ -146,6 +146,9 @@ jobs:
     runs-on: windows-latest
     environment: release
     needs: prereqs
+    strategy:
+      matrix:
+        runtime: [win-x86, win-x64, win-arm64]
     steps:
     - uses: actions/checkout@v4
 
@@ -156,7 +159,9 @@ jobs:
 
     - name: Build
       run: |
-        dotnet build --configuration=WindowsRelease
+        dotnet build src/windows/Installer.Windows/Installer.Windows.csproj `
+        --configuration=Release `
+        --runtime=${{ matrix.runtime }}
 
     - name: Run Windows unit tests
       run: |
@@ -165,9 +170,10 @@ jobs:
     - name: Lay out Windows payload and symbols
       run: |
         cd $env:GITHUB_WORKSPACE\src\windows\Installer.Windows\
-        ./layout.ps1 -Configuration WindowsRelease `
+        ./layout.ps1 -Configuration Release `
           -Output $env:GITHUB_WORKSPACE\payload `
-          -SymbolOutput $env:GITHUB_WORKSPACE\symbols
+          -SymbolOutput $env:GITHUB_WORKSPACE\symbols `
+          -RuntimeIdentifier ${{ matrix.runtime }}
 
     - name: Log into Azure
       uses: azure/login@v2
